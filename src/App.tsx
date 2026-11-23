@@ -1,35 +1,27 @@
-import Container from '@mui/material/Container';
-import Typography from '@mui/material/Typography';
-import Link from '@mui/material/Link';
-
-function Copyright() {
-  return (
-    <Typography
-      variant="body2"
-      align="left"
-      sx={{
-        color: 'text.secondary',
-      }}
-    >
-      {'Copyright © '}
-      <Link color="inherit" href="https://noelljarja.com/">
-        Noel Ljarja
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
-
+import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import AppBar from '@mui/material/AppBar';
+import DatePickerPage from './pages/DatePickerPage';
+import BookmarksPage from './pages/BookmarksPage';
+import IconButton from '@mui/material/IconButton';
+import { Toolbar } from '@mui/material';
+import { Home as HomeIcon, Bookmark as BookmarkIcon } from '@mui/icons-material';
 export default function App() {
   return (
-    <Container maxWidth="sm">
-      <div className="my-4">
-        <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
-          Today's Date is {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-        </Typography>
-        <Copyright />
-      </div>
-    </Container>
+    <BrowserRouter>
+      <AppBar sx={{ bgcolor: '#b8501c' }} position="static">
+          <Toolbar>
+          <IconButton  disableRipple component={NavLink} to="/">
+            <span className="labeled-button"><HomeIcon /><span className="labeled-button-text">Almanac</span></span>
+          </IconButton>
+          <IconButton  disableRipple component={NavLink} to="/bookmarks">
+            <span className="labeled-button"><BookmarkIcon /><span className="labeled-button-text">Bookmark</span></span>
+          </IconButton>
+          </Toolbar>
+      </AppBar>
+      <Routes>
+        <Route path="/" element={<DatePickerPage />} />
+        <Route path="/bookmarks" element={<BookmarksPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

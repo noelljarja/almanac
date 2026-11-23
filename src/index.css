@@ -1,1 +1,15 @@
 @import 'tailwindcss';
+
+.labeled-button{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border:2px solid #6d2e0f;
+    border-radius: 10px;
+    color:#fff;
+    padding:5px 15px;
+}
+.labeled-button-text{
+    margin-left: 10px;
+    font-size: 24px;
+}
