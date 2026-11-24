@@ -28,6 +28,7 @@
     "@eslint/js": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@types/react-router-hash-link": "^2.4.10",
     "@vitejs/plugin-react": "latest",
     "eslint": "latest",
     "eslint-config-prettier": "^10.1.8",

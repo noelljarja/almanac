@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import DatePickerPage from './pages/DatePickerPage';
 import BookmarksPage from './pages/BookmarksPage';

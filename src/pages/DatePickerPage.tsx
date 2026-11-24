@@ -30,7 +30,7 @@ import { saveBookmark } from '../utils/bookmarks';
 //Additional import outside requirements for the hash navigation in ids
 import { HashLink } from 'react-router-hash-link';
 
-function wikiEventToHtml(event: WikiEvent, type: string, date: Date): string {
+function wikiEventToHtml(event: WikiEvent, date: Date): string {
   const dateStr = date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -147,23 +147,28 @@ export default function DatePickerPage() {
   }, [location]);
 
   const getLocation = async () => {
-    const status = await navigator.permissions.query({ name: 'geolocation' });
-    if (status.state !== 'granted') {
-      setPlace(
-        'Your location is not available. Please allow location access in your browser settings.',
-      );
+    const permission = await navigator.permissions.query({
+      name: 'geolocation',
+    });
+
+    if (permission.state === 'denied') {
+      setPlace('Please enable location access in your browser settings.');
       return;
     }
+
+    // Both "granted" and "prompt" should proceed.
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocation({ lat: position.coords.latitude, long: position.coords.longitude });
+        setLocation({
+          lat: position.coords.latitude,
+          long: position.coords.longitude,
+        });
       },
       (error) => {
-        console.error('Error getting location:', error);
+        console.error(error);
       },
     );
   };
-
   useEffect(() => {
     setEventsLoading(true);
     setWeatherLoading(true);
@@ -311,18 +316,19 @@ export default function DatePickerPage() {
             <Stack sx={{ mt: 2 }}>
               {events.map((event, index) => (
                 <Stack key={index}>
-                  <Stack direction="row" alignItems="flex-start" spacing={1}>
+                  <Stack direction="row" spacing={1}>
                     <Typography variant="body1" sx={{ mt: 2, flex: 1 }}>
                       {event.year}: {event.text}
                     </Typography>
                     <Tooltip title="Bookmark this event">
                       <IconButton
                         size="small"
+                        disableRipple
                         sx={{ mt: 1.5 }}
                         onClick={() => {
                           openBookmarkModal(
                             `${event.year.toString()}: ${event.text.substring(0, 50)}`,
-                            wikiEventToHtml(event, 'Event', date),
+                            wikiEventToHtml(event, date),
                             'event',
                           );
                         }}
@@ -369,18 +375,19 @@ export default function DatePickerPage() {
             <Stack spacing={2} sx={{ mt: 2 }}>
               {births.map((birth, index) => (
                 <Stack key={index}>
-                  <Stack direction="row" alignItems="flex-start" spacing={1}>
+                  <Stack direction="row" spacing={1}>
                     <Typography variant="body1" sx={{ mt: 2, flex: 1 }}>
                       <span className="font-bold">{birth.year}</span>: {birth.text}
                     </Typography>
                     <Tooltip title="Bookmark this birth">
                       <IconButton
                         size="small"
+                        disableRipple
                         sx={{ mt: 1.5 }}
                         onClick={() => {
                           openBookmarkModal(
                             `Born ${birth.year.toString()}: ${birth.text.substring(0, 50)}`,
-                            wikiEventToHtml(birth, 'Birth', date),
+                            wikiEventToHtml(birth, date),
                             'birth',
                           );
                         }}
@@ -427,18 +434,19 @@ export default function DatePickerPage() {
             <Stack spacing={2} sx={{ mt: 2 }}>
               {deaths.map((death, index) => (
                 <Stack key={index}>
-                  <Stack direction="row" alignItems="flex-start" spacing={1}>
+                  <Stack direction="row" spacing={1}>
                     <Typography variant="body1" sx={{ mt: 2, flex: 1 }}>
                       <span className="font-bold">{death.year}</span>: {death.text}
                     </Typography>
                     <Tooltip title="Bookmark this death">
                       <IconButton
                         size="small"
+                        disableRipple
                         sx={{ mt: 1.5 }}
                         onClick={() => {
                           openBookmarkModal(
                             `Died ${death.year.toString()}: ${death.text.substring(0, 50)}`,
-                            wikiEventToHtml(death, 'Death', date),
+                            wikiEventToHtml(death, date),
                             'death',
                           );
                         }}
@@ -472,7 +480,7 @@ export default function DatePickerPage() {
 
         {/* Weather & Sky */}
         <Grid size={{ xs: 12, sm: 6, md: 3 }} id="weather-sky">
-          <Stack direction="row" alignItems="center" sx={{ mt: 4 }} spacing={1}>
+          <Stack sx={{ mt: 4, alignItems: 'center', flexDirection: 'row' }} spacing={1}>
             <Typography variant="h6" color="text.secondary" sx={{ flex: 1 }}>
               {date < new Date() ? 'What was the weather like' : 'What will the weather be like?'}{' '}
               {!location?.lat && !location?.long ? 'in null Island' : ''}?
@@ -481,6 +489,7 @@ export default function DatePickerPage() {
               <Tooltip title="Bookmark the weather">
                 <IconButton
                   size="small"
+                  disableRipple
                   onClick={() => {
                     openBookmarkModal(
                       `Weather on ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}${place ? ` in ${place}` : ''}`,
@@ -501,7 +510,7 @@ export default function DatePickerPage() {
               Weather data not available.
             </Typography>
           ) : (
-            <Stack variant="body1" sx={{ mt: 2 }}>
+            <Stack sx={{ mt: 2 }}>
               <Stack>
                 <Typography variant="body1" sx={{ mt: 2 }}>
                   Max Temp: {weather.daily.temperature_2m_max[0]}°C
@@ -519,7 +528,7 @@ export default function DatePickerPage() {
             </Stack>
           )}
 
-          <Stack direction="row" alignItems="center" sx={{ mt: 4 }} spacing={1}>
+          <Stack sx={{ mt: 4, flexDirection: 'row', alignItems: 'center' }} spacing={1}>
             <Typography variant="h6" color="text.secondary" sx={{ flex: 1 }}>
               {date < new Date() ? 'What did the sky look like?' : 'What will the sky look like?'}
             </Typography>
@@ -527,6 +536,7 @@ export default function DatePickerPage() {
               <Tooltip title="Bookmark the sky">
                 <IconButton
                   size="small"
+                  disableRipple
                   onClick={() => {
                     openBookmarkModal(`Sky: ${sky.title}`, skyToHtml(sky), 'sky');
                   }}
@@ -543,7 +553,7 @@ export default function DatePickerPage() {
               Sky data not available.
             </Typography>
           ) : (
-            <Stack variant="body1" sx={{ mt: 2 }}>
+            <Stack sx={{ mt: 2 }}>
               <Stack>
                 {sky.media_type === 'video' ? (
                   <iframe
