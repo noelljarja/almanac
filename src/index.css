@@ -13,3 +13,25 @@
     margin-left: 10px;
     font-size: 24px;
 }
+.date-button{
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-left: 2px !important;
+    margin-right: 2px !important;
+    color: #b8501c !important;
+    border: 1px solid #b8501c !important;
+}
+
+.Mui-focused .MuiOutlinedInput-notchedOutline {
+    border-color: #b8501c !important;
+}
+
+a{
+    color: #b8501c !important;
+}
+
+.nasa-section {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 1rem;
+}

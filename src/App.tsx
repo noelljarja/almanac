@@ -5,6 +5,7 @@ import BookmarksPage from './pages/BookmarksPage';
 import IconButton from '@mui/material/IconButton';
 import { Toolbar } from '@mui/material';
 import { Home as HomeIcon, Bookmark as BookmarkIcon } from '@mui/icons-material';
+
 export default function App() {
   return (
     <BrowserRouter>
