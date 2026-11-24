@@ -10,6 +10,22 @@ const theme = createTheme({
     primary: {
       main: '#b8501c',
     },
+    birth: {
+      main: '#6a806b',
+      contrastText: '#ffffff',
+    },
+    death: {
+      main: '#2b0404',
+      contrastText: '#ffffff',
+    },
+    sky: {
+      main: '#5d0371',
+      contrastText: '#ffffff',
+    },
+    weather: {
+      main: '#618eff',
+      contrastText: '#ffffff',
+    },
   },
 });
 
