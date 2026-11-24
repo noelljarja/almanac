@@ -9,7 +9,7 @@ import { Home as HomeIcon, Bookmark as BookmarkIcon } from '@mui/icons-material'
 export default function App() {
   return (
     <BrowserRouter>
-      <AppBar sx={{ bgcolor: '#b8501c' }} position="static">
+      <AppBar color="primary" position="static">
           <Toolbar>
           <IconButton  disableRipple component={NavLink} to="/">
             <span className="labeled-button"><HomeIcon /><span className="labeled-button-text">Almanac</span></span>

@@ -5,7 +5,7 @@ import TextField from '@mui/material/TextField';
 import Grid from '@mui/material/Grid';
 import { getSkyOnDate, getWeatherOnDate, getWhatHappenedOnDate, NasaSkyData, OpenMeteoDailyResponse, WikiEvent } from '../api/almanac';
 import { Link } from 'react-router-dom';
-import { Accordion, AccordionDetails, AccordionSummary, Button } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Button, LinearProgress, Stack } from '@mui/material';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DOMPurify from 'dompurify';
 
@@ -14,24 +14,50 @@ export default function DatePickerPage() {
   const [date, setDate] = useState(new Date());
   const [events, setEvents] = useState<WikiEvent[]>([]);
   const [births, setBirths] = useState<WikiEvent[]>([]);
+  const [deaths, setDeaths] = useState<WikiEvent[]>([]);
   const [location, setLocation] = useState<{ lat: number; long: number } | null>(null);
   const [weather, setWeather] = useState<OpenMeteoDailyResponse | null>(null);
   const [sky, setSky] = useState<NasaSkyData | null>(null);
   const [eventsLoading, setEventsLoading] = useState<boolean>(true);
   const [weatherLoading, setWeatherLoading] = useState<boolean>(true);
   const [skyLoading, setSkyLoading] = useState<boolean>(true);
-
+  const [place, setPlace] = useState<string | null>(null);
   useEffect(() => {
-    setEvents([]);
-    setBirths([]);
-    setWeather(null);
     setEventsLoading(true);
     setWeatherLoading(true);
     setSkyLoading(true);
+  }, [date]);
 
+  useEffect(() => {
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${location?.lat}&lon=${location?.long}&zoom=10`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.address) {
+          const city = data.address.city || data.address.town || data.address.village || data.address.state;
+          const country = data.address.country;
+          setPlace([city, country].filter(Boolean).join(', '));
+        } else {
+          console.log(location?.lat, location?.long);
+          setPlace(!location.lat && !location.long 
+            ? 'Your location is not available. Please allow location access in your browser settings.'
+            : 'Maybe in the ocean?');
+        }
+      })
+      .catch(() => setPlace('Your location is not available. Please allow location access in your browser settings.'));
+  }, [location?.lat, location?.long]);
+
+
+  const getLocation = async () => {
     if (!navigator.geolocation) {
       console.error('Geolocation is not supported by this browser.');
       return;
+    }
+    if (navigator.permissions) {
+      const status = await navigator.permissions.query({ name: 'geolocation' });
+      if (status.state !== 'granted') {
+        setPlace('Your location is not available. Please allow location access in your browser settings.')
+        return;
+      }
     }
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -42,9 +68,15 @@ export default function DatePickerPage() {
         console.error('Error getting location:', error);
       }
     );
+  };
+
+  useEffect(() => {
+    getLocation();
     getWhatHappenedOnDate(date).then((data) => {
       setEvents(data.events);
       setBirths(data.births);
+      setDeaths(data.deaths);
+      setEventsLoading(false);
     }).catch((error: unknown) => {
       console.error('Error fetching almanac data:', error);
       setEventsLoading(false);
@@ -57,7 +89,7 @@ export default function DatePickerPage() {
       setWeatherLoading(false);
     });
     getSkyOnDate(date).then((data: NasaSkyData | null) => {
-      data ? setSky(data[0]) : setSky(null);
+      data ? setSky(data) : setSky(null);
       setSkyLoading(false);
     }).catch((error: unknown) => {
       console.error('Error fetching sky data:', error);
@@ -76,6 +108,12 @@ export default function DatePickerPage() {
             day: 'numeric',
           })}
         </Typography>
+        <Typography variant="h5" component="h3" sx={{ mb: 3 }}>
+          Your location: {place} 
+        </Typography>
+        <Button variant="outlined" onClick={getLocation} sx={{ mb: 3 }}>
+          Refresh Location
+        </Button>
         <Typography variant="body1" sx={{ mb: 2 }}>
           Pick a date to see what happened on that day in history.
           <Button className="date-button" variant="outlined" onClick={() => (setDate(new Date(new Date().setDate(new Date().getDate() - 1))))}>
@@ -110,7 +148,7 @@ export default function DatePickerPage() {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
-        })} in history
+        })}
       </Typography>
 
 
@@ -120,39 +158,158 @@ export default function DatePickerPage() {
           <Typography variant="h6" color="text.secondary" sx={{ mt: 4 }}>
             What was happening?
           </Typography>
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            {events.map((event, index) => (
-              <div key={index}>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  {event.year}: {event.text}
-                </Typography>
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ArrowDownwardIcon />}>
-                    Sources:
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    {event.pages.map((page, pageIndex) => (
-                      <Typography key={pageIndex} variant="body2" sx={{ mt: 1 }}>
-                        <Link to={page.content_urls.desktop.page} target="_blank" rel="noopener noreferrer" style={{ color: '#b8501c' }}>
-                          {page.title.replace(/_/g, ' ')}
-                        </Link>
-                      </Typography>
-                    ))}
-                  </AccordionDetails>
-                </Accordion>
-              </div>
-            ))}
-          </Typography>
+          {eventsLoading ? (
+            <LinearProgress sx={{ mt: 2 }} />
+          ) : events.length === 0 ? (
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              No events found for this date.
+            </Typography>
+          ) : (
+            <Stack sx={{ mt: 2 }}>
+              {events.map((event, index) => (
+                <Stack key={index}>
+                  <Typography variant="body1" sx={{ mt: 2 }}>
+                    {event.year}: {event.text}
+                  </Typography>
+                  <Accordion>
+                    <AccordionSummary
+                      expandIcon={<ArrowDownwardIcon />}>
+                      Sources:
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      {event.pages.map((page, pageIndex) => (
+                        <Typography key={pageIndex} variant="body2" sx={{ mt: 1 }}>
+                          <Link to={page.content_urls.desktop.page} target="_blank" rel="noopener noreferrer" style={{ color: '#b8501c' }}>
+                            {page.title.replace(/_/g, ' ')}
+                          </Link>
+                        </Typography>
+                      ))}
+                    </AccordionDetails>
+                  </Accordion>
+                </Stack>
+              ))}
+            </Stack>)}
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Typography variant="h6" color="text.secondary" sx={{ mt: 4 }}>
-            What the sky looked like?
+            Who was born?
           </Typography>
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            {sky ? (
-              <div>
+          {eventsLoading ? (
+            <LinearProgress color="primary" sx={{ mt: 2 }} />
+          ) : births.length === 0 ? (
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              No births found for this date.
+            </Typography>
+          ) : (
+            <Stack spacing={2} sx={{ mt: 2 }}>
+              {births.map((birth, index) => (
+                <Stack key={index}>
+                  <Typography variant="body1" sx={{ mt: 2 }}>
+                    <span className="font-bold"> {birth.year} </span>: {birth.text}
+                  </Typography>
+                  <Accordion>
+                    <AccordionSummary
+                      expandIcon={<ArrowDownwardIcon />}>
+                      Sources:
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      {birth.pages.map((page, pageIndex) => (
+                        <Typography key={pageIndex} variant="body2" sx={{ mt: 1 }}>
+                          <Link to={page.content_urls.desktop.page} target="_blank" rel="noopener noreferrer" style={{ color: '#b8501c' }}>
+                            {page.title.replace(/_/g, ' ')}
+                          </Link>
+                        </Typography>
+                      ))}
+                    </AccordionDetails>
+                  </Accordion>
+                </Stack>
+              ))}
+            </Stack>)}
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Typography variant="h6" color="text.secondary" sx={{ mt: 4 }}>
+            Who died?
+          </Typography>
+          {eventsLoading ? (
+            <LinearProgress sx={{ mt: 2 }} />
+          ) : deaths.length === 0 ? (
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              No deaths found for this date.
+            </Typography>
+          ) : (
+            <Stack spacing={2} sx={{ mt: 2 }}>
+              {deaths.map((death, index) => (
+                <Stack key={index}>
+                  <Typography variant="body1" sx={{ mt: 2 }}>
+                    <span className="font-bold"> {death.year} </span>: {death.text}
+                  </Typography>
+                  <Accordion>
+                    <AccordionSummary
+                      expandIcon={<ArrowDownwardIcon />}>
+                      Sources:
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      {death.pages.map((page, pageIndex) => (
+                        <Typography key={pageIndex} variant="body2" sx={{ mt: 1 }}>
+                          <Link to={page.content_urls.desktop.page} target="_blank" rel="noopener noreferrer" style={{ color: '#b8501c' }}>
+                            {page.title.replace(/_/g, ' ')}
+                          </Link>
+                        </Typography>
+                      ))}
+                    </AccordionDetails>
+                  </Accordion>
+                </Stack>
+              ))}
+            </Stack>)}
+        </Grid>
+        
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Typography variant="h6" color="text.secondary" sx={{ mt: 4 }}>
+            {/* Display this when location permission is not set*/}
+            What {date <new Date() ? 'was the weather like' : 'will the weather be like?'} {!location?.lat && !location?.long ? 'in null Island' : ''} ?
+          </Typography>
+          {weatherLoading ? (
+            <LinearProgress sx={{ mt: 2 }} />
+          ) : !weather ? (
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              Weather data not available.
+            </Typography>
+          ) : (
+            <Stack variant="body1" sx={{ mt: 2 }}>
+              {weather.daily ? (
+                <Stack>
+                  <Typography variant="body1" sx={{ mt: 2 }}>
+                    Max Temp: {weather.daily.temperature_2m_max[0]}°C
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 2 }}>
+                    Min Temp: {weather.daily.temperature_2m_min[0]}°C
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 2 }}>
+                    Precipitation: {weather.daily.precipitation_sum[0]}mm
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 2 }}>
+                    Max Wind Speed: {weather.daily.wind_speed_10m_max[0]}m/s
+                  </Typography>
+                </Stack>
+              ) : (
+                <Typography variant="body1" sx={{ mt: 2 }}>
+                  Weather data not available.
+                </Typography>
+              )}
+            </Stack>)}
+          <Typography variant="h6" color="text.secondary" sx={{ mt: 4 }}>
+            What {date < new Date() ? 'did the sky look like?' : 'will the sky look like?'}
+          </Typography>
+          {skyLoading ? (
+            <LinearProgress sx={{ mt: 2 }} />
+          ) : !sky ? (
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              Sky data not available.
+            </Typography>
+          ) : (
+          <Stack variant="body1" sx={{ mt: 2 }}>
+              <Stack>
                 {sky.media_type === 'video' ? (
                   <iframe
                     title={sky.title}
@@ -168,72 +325,9 @@ export default function DatePickerPage() {
                   {sky.title}
                 </Typography>
                 {/* Displayed the explanation with sanitized HTML content to prevent XSS attacks */}
-                <div class="nasa-section" dangerouslySetInnerHTML={{ __html: sky.explanation ? DOMPurify.sanitize(sky.explanation) : '' }} />
-              </div>
-            ) : (
-              <Typography variant="body1" sx={{ mt: 2 }}>
-                Sky data not available.
-              </Typography>
-            )}
-          </Typography>
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Typography variant="h6" color="text.secondary" sx={{ mt: 4 }}>
-            What was the weather like?
-          </Typography>
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            {weather && weather.daily ? (
-              <div>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  Max Temp: {weather.daily.temperature_2m_max[0]}°C
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  Min Temp: {weather.daily.temperature_2m_min[0]}°C
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  Precipitation: {weather.daily.precipitation_sum[0]}mm
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  Max Wind Speed: {weather.daily.wind_speed_10m_max[0]}m/s
-                </Typography>
-              </div>
-            ) : (
-              <Typography variant="body1" sx={{ mt: 2 }}>
-                Weather data not available.
-              </Typography>
-            )}
-          </Typography>
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Typography variant="h6" color="text.secondary" sx={{ mt: 4 }}>
-            Who was born?
-          </Typography>
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            {births.map((birth, index) => (
-              <div key={index}>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  <span className="font-bold"> {birth.year} </span>: {birth.text}
-                </Typography>
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ArrowDownwardIcon />}>
-                    Sources:
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    {birth.pages.map((page, pageIndex) => (
-                      <Typography key={pageIndex} variant="body2" sx={{ mt: 1 }}>
-                        <Link to={page.content_urls.desktop.page} target="_blank" rel="noopener noreferrer" style={{ color: '#b8501c' }}>
-                          {page.title.replace(/_/g, ' ')}
-                        </Link>
-                      </Typography>
-                    ))}
-                  </AccordionDetails>
-                </Accordion>
-              </div>
-            ))}
-          </Typography>
+                <div className="nasa-section" dangerouslySetInnerHTML={{ __html: sky.explanation ? DOMPurify.sanitize(sky.explanation) : '' }} />
+              </Stack>
+          </Stack>)}
         </Grid>
       </Grid>
     </Container>

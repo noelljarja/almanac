@@ -94,7 +94,8 @@ export async function getWeatherOnDate(date: Date, lat: number, long: number): P
 }
 
 export async function getSkyOnDate(date: Date): Promise<NasaSkyData | null> {
-    const url = `https://science.nasa.gov/wp-json/wp/v2/apod-basic/?date=${date.toISOString().split('T')[0]}&api_key=${NASA_API_KEY}`;
+    const formattedDate = date.toISOString().slice(2, 10).replaceAll('-', '');
+    const url = `https://science.nasa.gov/wp-json/wp/v2/apod-basic/${formattedDate}?api_key=${NASA_API_KEY}`;
     console.log('Fetching sky data from URL:', url);
     try {
         const response: Response = await fetch(url);
