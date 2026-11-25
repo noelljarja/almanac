@@ -3,6 +3,7 @@
 ## How to use
 
 Clone repository
+Replace .env-example with .env and set the api key from NASA API
 
 Install it and run locally:
 
