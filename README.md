@@ -62,3 +62,31 @@ api/almanac.ts->Api Calls for each request with simple error handling plus inter
 #### Docker setup
 
 Simple docker setup for vite. It required the API Key to be set in the .env and loads directly with composer up. The deployment is in production mode hence the nginx config. The app is built and shown through the container.
+
+#### Le Tests
+
+I created some sample tests, mostly for the API, since I thought it is something that is worth testing. Sometimes APIs get updated and therefore tests should be the source of truth on changes.\\
+
+They can be run with
+
+```bash
+npm run test
+```
+
+\\
+The tests are quite simple for the APIs in general, here is the Wiki API:\
+
+First test tries if the function is putting date correctly in the URL\
+Second test compares it to a mock result if the api returns the response on success\
+Third test tests if an error is thrown on 404.\\
+
+For Weather API:\\
+
+The 3 first tests see depending on the date if the archive, forecast or future date is called correctly.\
+The 4th test if latitude and longitude is passed correctly to the API\
+The last two are similar to Wiki API\\
+
+For NASA API: \\
+First test checks if the date is set correctly, the second checks the API, third and fourth are similar to other APIs
+
+As it is also shown in code, the error codes for each API change. The idea is we can lookup other error codes as well and we can check them out, but since we would get same results I just left it as a demo there, to see that it works for different status codes as well. Other test could also be implemented to check other error codes, but I think it is clear for this demo.

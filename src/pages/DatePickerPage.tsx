@@ -556,13 +556,10 @@ export default function DatePickerPage() {
             <Stack sx={{ mt: 2 }}>
               <Stack>
                 {sky.media_type === 'video' ? (
-                  <iframe
-                    title={sky.title}
-                    src={sky.hdurl}
-                    width="100%"
-                    height="315"
-                    allowFullScreen
-                  ></iframe>
+                  //Removed iframe because of the sameorigin problem
+                  <a href={sky.url} target="_blank" rel="noopener noreferrer">
+                    Watch video on NASA ↗
+                  </a>
                 ) : (
                   <img src={sky.hdurl} alt={sky.title} style={{ maxWidth: '100%' }} />
                 )}
